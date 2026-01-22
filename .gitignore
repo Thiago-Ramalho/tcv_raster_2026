@@ -6,6 +6,7 @@ __pycache__/
 
 # Virtual environments
 env/
+.env/
 .venv/
 venv/
 
@@ -25,3 +26,4 @@ output.png
 
 # Misc
 *.log
+.vscode/settings.json
