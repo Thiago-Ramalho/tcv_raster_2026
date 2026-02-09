@@ -12,6 +12,11 @@ from src.antialiasing import antialiasing_factor
 def eval_point(scene, point):
 # Receives a point and returns a color based on the first primitive it's inside of
 
+    # Check if it's a special colored scene (like mandelbrot_colored_scene)
+    if hasattr(scene, 'get_point_color'):
+        color = scene.get_point_color(point)
+        return [color.r, color.g, color.b]
+
     # Set background color
     final_color = list(scene.background.as_list())
     # If point is inside any primitive, set pixel color to that primitive's color

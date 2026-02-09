@@ -49,3 +49,51 @@ class ImplicitFunction(Shape):
 
     def in_out(self, point):
         return self.func(point) <= 0
+
+class Mandelbrot(Shape):
+    def __init__(self, max_iterations=100, escape_radius=2.0):
+        super().__init__("mandelbrot")
+        self.max_iterations = max_iterations
+        self.escape_radius = escape_radius
+        self.escape_radius_squared = escape_radius * escape_radius
+
+    def in_out(self, point):
+        """
+        Test if a point is in the Mandelbrot set.
+        Returns True if the point is in the set (doesn't diverge).
+        """
+        c = complex(point[0], point[1])
+        z = 0 + 0j
+        
+        for i in range(self.max_iterations):
+            if z.real * z.real + z.imag * z.imag > self.escape_radius_squared:
+                return False  # Point diverged, not in the set
+            z = z * z + c
+            
+        return True  # Point didn't diverge within max_iterations, consider it in the set
+
+class MandelbrotColored(Shape):
+    def __init__(self, max_iterations=100, escape_radius=2.0):
+        super().__init__("mandelbrot_colored")
+        self.max_iterations = max_iterations
+        self.escape_radius = escape_radius
+        self.escape_radius_squared = escape_radius * escape_radius
+
+    def in_out(self, point):
+        """Always returns True, but the iteration_count can be used for coloring"""
+        return True
+        
+    def iteration_count(self, point):
+        """
+        Returns the number of iterations before divergence.
+        Used for coloring the fractal.
+        """
+        c = complex(point[0], point[1])
+        z = 0 + 0j
+        
+        for i in range(self.max_iterations):
+            if z.real * z.real + z.imag * z.imag > self.escape_radius_squared:
+                return i  # Point diverged at iteration i
+            z = z * z + c
+            
+        return self.max_iterations  # Point didn't diverge
