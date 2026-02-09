@@ -3,6 +3,7 @@ import importlib
 from itertools import product
 
 import numpy as np
+import math
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
@@ -22,6 +23,25 @@ def eval_point(scene, point):
             break  # Stop at the first primitive that contains the point
     return final_color
 
+def rotate_point(x, y, center_x, center_y, angle_degrees):
+# Function that rotates a point (x,y) around the center
+    
+    # Negate angle to make positive angles counter-clockwise (standard convention)
+    angle_rad = math.radians(angle_degrees)
+    cos_a = math.cos(angle_rad)
+    sin_a = math.sin(angle_rad)
+    
+    # Translate to origin
+    dx = x - center_x
+    dy = y - center_y
+    
+    # Rotate
+    rotated_x = dx * cos_a - dy * sin_a
+    rotated_y = dx * sin_a + dy * cos_a
+    
+    # Translate back
+    return rotated_x + center_x, rotated_y + center_y
+
 def main(args):
     xmin, xmax, ymin, ymax = args.window
     width, height = args.resolution
@@ -36,6 +56,9 @@ def main(args):
     # load scene from file args.scene
     scene = importlib.import_module(args.scene).Scene()
 
+    # Calculate image center for rotation
+    center_x = (xmin + xmax) / 2
+    center_y = (ymin + ymax) / 2
 
     # for each pixel, determine if it is inside any primitive in the scene
     # use cartesian product for efficiency
@@ -44,7 +67,13 @@ def main(args):
 
         if args.filter == 'none':
             # No anti-aliasing, just evaluate the center point to find the color
-            image[j, i] = eval_point(scene, point)
+            # Apply rotation if specified
+            if args.angle != 0:
+                # We invert the angle sign because this is the inverse transformation
+                rotated_point = rotate_point(point[0], point[1], center_x, center_y, -args.angle)
+            else:
+                rotated_point = point
+            image[j, i] = eval_point(scene, rotated_point)
         else:
             # Anti-aliasing: sample multiple points within the pixel and weighted average
             weighted_colors = []
@@ -58,9 +87,15 @@ def main(args):
                 offset_y = random_number_2 * (ymax - ymin) / height
                 sample_point = (point[0] + offset_x, point[1] + offset_y)
                 
+                # Apply rotation if specified
+                if args.angle != 0:
+                    rotated_sample_point = rotate_point(sample_point[0], sample_point[1], center_x, center_y, args.angle)
+                else:
+                    rotated_sample_point = sample_point
+                
                 # Get filter weight and color
                 filter_weight = antialiasing_factor(random_number_1, random_number_2, args.filter, args.sd)
-                color = eval_point(scene, sample_point)
+                color = eval_point(scene, rotated_sample_point)
                 
                 # Store color and weight separately
                 weighted_colors.append(np.array(color) * filter_weight)
@@ -70,7 +105,12 @@ def main(args):
             if sum(weights) > 0:
                 weighted_average = np.sum(weighted_colors, axis=0) / np.sum(weights)
             else:
-                weighted_average = eval_point(scene, point)  # fallback to center point
+                # fallback to center point (with rotation if specified)
+                if args.angle != 0:
+                    rotated_point = rotate_point(point[0], point[1], center_x, center_y, args.angle)
+                else:
+                    rotated_point = point
+                weighted_average = eval_point(scene, rotated_point)
                 
             # Ensure values are in [0, 1] range for matplotlib
             image[j, i] = np.clip(weighted_average, 0, 1)
@@ -88,6 +128,7 @@ if __name__ == "__main__":
     parser.add_argument('-f', '--filter', type=str, choices=['none', 'box', 'hat', 'gaussian'], help='Anti-aliasing filter type', default='none')
     parser.add_argument('-n', '--n_samples', type=int, help='Number of samples per pixel for anti-aliasing', default=10)
     parser.add_argument('--sd', type=float, help='Standard deviation for Gaussian filter', default=0.25)
+    parser.add_argument('-a', '--angle', type=float, help='Rotation angle in degrees (rotates image content around center)', default=0.0)
     args = parser.parse_args()
 
     main(args)
