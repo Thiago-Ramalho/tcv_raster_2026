@@ -80,14 +80,11 @@ class MandelbrotColored(Shape):
         self.escape_radius_squared = escape_radius * escape_radius
 
     def in_out(self, point):
-        """Always returns True, but the iteration_count can be used for coloring"""
+        # Always returns True, but the iteration_count can be used for coloring
         return True
         
     def iteration_count(self, point):
-        """
-        Returns the number of iterations before divergence.
-        Used for coloring the fractal.
-        """
+        # Returns the number of iterations before divergence,used for coloring the fractal
         c = complex(point[0], point[1])
         z = 0 + 0j
         

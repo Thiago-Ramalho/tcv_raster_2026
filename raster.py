@@ -94,7 +94,7 @@ def main(args):
                 
                 # Apply rotation if specified
                 if args.angle != 0:
-                    rotated_sample_point = rotate_point(sample_point[0], sample_point[1], center_x, center_y, args.angle)
+                    rotated_sample_point = rotate_point(sample_point[0], sample_point[1], center_x, center_y, -args.angle)
                 else:
                     rotated_sample_point = sample_point
                 
